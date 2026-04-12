@@ -3,7 +3,7 @@ Capstone 1: Serverless IT Support Portal
 ## Architecture Overview
 This project is a fully decoupled serverless web application built on AWS. 
 
-![System Architecture](Serverless%20Website%20Ticketing%20Architecture.drawio.png)
+![System Architecture](Architecture.png)
 
 ## The Tech Stack
 * **Frontend:** Amazon S3 (Static Web Hosting)
