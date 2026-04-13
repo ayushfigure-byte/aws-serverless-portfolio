@@ -20,6 +20,6 @@ resource "aws_sqs_queue" "main_ticket_queue" {
   # 4. The API Contract: Connect the Main Queue to the DLQ
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.ticket_dlq.arn
-    maxReceiveCount     = 3 # If Lambda fails 3 times, move it to the DLQ
+    maxReceiveCount     = 3 # If any resource fails 3 times, move it to the DLQ
   })
 }
