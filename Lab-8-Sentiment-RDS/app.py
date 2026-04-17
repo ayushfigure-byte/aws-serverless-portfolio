@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 # --- Database Setup ---
 # Note: We will replace 'YOUR_NEW_ENDPOINT' in a few minutes
-DB_URL = "postgresql://postgres:BoozAllen2026!@YOUR_NEW_ENDPOINT:5432/postgres"
+DB_URL = "postgresql://postgres:BoozAllen2026!@sentiment-db-v2.ch4ecygo0rze.us-east-1.rds.amazonaws.com:5432/postgres"
 engine = create_engine(DB_URL)
 Base = declarative_base()
 
