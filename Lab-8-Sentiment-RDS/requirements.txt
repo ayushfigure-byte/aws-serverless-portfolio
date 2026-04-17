@@ -1,0 +1,5 @@
+flask
+selenium
+sqlalchemy
+psycopg2-binary
+pandas
