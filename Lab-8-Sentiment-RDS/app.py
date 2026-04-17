@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 # --- Database Setup ---
 # Using your specific RDS endpoint and credentials
-DB_URL = "os.getenv('DATABASE_URL')"
+DB_URL = os.getenv('DATABASE_URL')
 engine = create_engine(DB_URL)
 Base = declarative_base()
 
