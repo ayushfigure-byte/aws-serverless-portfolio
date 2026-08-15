@@ -3,7 +3,7 @@
 An event-driven alerting system that consumes DynamoDB Streams CDC events, prompts Amazon Bedrock (Nova Micro) via the Converse API for domain risk impact analysis, and broadcasts notifications using Amazon SNS.
 
 ## Architecture Diagram
-![Lab 12 Architecture](docs/architecture.png)
+![Lab 12 Architecture](docs/architecture.png?v=2)
 
 ## Architecture Overview
 1. **Amazon DynamoDB Streams:** Emits CDC records on anomaly insertion (`INSERT`).
