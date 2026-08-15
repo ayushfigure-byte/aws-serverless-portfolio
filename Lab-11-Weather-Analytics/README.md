@@ -2,7 +2,10 @@
 
 An end-to-end serverless data lake and statistical anomaly detection pipeline built on AWS.
 
-## Architecture
+## Architecture Diagram
+![Lab 11 Architecture](docs/architecture.png)
+
+## Architecture Overview
 1. **S3 Landing Zone:** Ingests raw NOAA GSOD meteorological CSV files.
 2. **Amazon Athena (OpenCSVSerde):** Maps raw positional text columns.
 3. **Amazon Athena (CTAS):** Transforms text CSV rows into columnar Apache Parquet files.
