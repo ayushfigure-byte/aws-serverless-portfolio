@@ -1,0 +1,137 @@
+{
+  "Comment": "NOAA Severe Weather Advisory Orchestrator with DynamoDB Caching & Bedrock Inference",
+  "StartAt": "Check DynamoDB Cache",
+  "States": {
+    "Check DynamoDB Cache": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:getItem",
+      "Parameters": {
+        "TableName": "NOAAAdvisoryCache",
+        "Key": {
+          "cache_key": {
+            "S.$": "States.Format('{}#{}', $.station_id, $.record_date)"
+          }
+        }
+      },
+      "ResultPath": "$.cache_result",
+      "Next": "Is Cache Hit?"
+    },
+    "Is Cache Hit?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.cache_result.Item",
+          "IsPresent": true,
+          "Next": "Format Cached Response"
+        }
+      ],
+      "Default": "Generate Bedrock Advisory"
+    },
+    "Format Cached Response": {
+      "Type": "Pass",
+      "Parameters": {
+        "source": "CACHE_HIT",
+        "station_id.$": "$.station_id",
+        "record_date.$": "$.record_date",
+        "z_score.$": "$.z_score",
+        "advisory.$": "$.cache_result.Item.advisory.S"
+      },
+      "End": true
+    },
+    "Generate Bedrock Advisory": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::bedrock:invokeModel",
+      "Parameters": {
+        "ModelId": "amazon.nova-micro-v1:0",
+        "Body": {
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "text.$": "States.Format('You are an automated meteorological risk advisor for NOAA. Severe anomaly detected at Station {} on {}: {} (Z-Score: {}, Daily Avg: {}F, Range: {}F to {}F). Provide a concise 3-bullet risk summary covering meteorological significance, grid/aviation risks, and operational posture under 120 words.', $.station_id, $.record_date, $.anomaly_type, $.z_score, $.avg_temp_f, $.min_temp_f, $.max_temp_f)"
+                }
+              ]
+            }
+          ],
+          "inferenceConfig": {
+            "maxTokens": 300,
+            "temperature": 0.2
+          }
+        }
+      },
+      "ResultSelector": {
+        "advisory_text.$": "$.Body.output.message.content[0].text"
+      },
+      "ResultPath": "$.inference",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Bedrock.ThrottlingException",
+            "Bedrock.ModelTimeoutException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "Save to DynamoDB Cache"
+    },
+    "Save to DynamoDB Cache": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Parameters": {
+        "TableName": "NOAAAdvisoryCache",
+        "Item": {
+          "cache_key": {
+            "S.$": "States.Format('{}#{}', $.station_id, $.record_date)"
+          },
+          "advisory": {
+            "S.$": "$.inference.advisory_text"
+          },
+          "z_score": {
+            "N.$": "States.Format('{}', $.z_score)"
+          },
+          "anomaly_type": {
+            "S.$": "$.anomaly_type"
+          }
+        }
+      },
+      "ResultPath": "$.cache_write_result",
+      "Next": "Is Severe Outlier?"
+    },
+    "Is Severe Outlier?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.z_score",
+          "NumericGreaterThanEquals": 2.5,
+          "Next": "Publish Critical Alert to SNS"
+        }
+      ],
+      "Default": "Format Fresh Response"
+    },
+    "Publish Critical Alert to SNS": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "arn:aws:sns:us-east-1:605134445337:NOAAWeatherAlerts",
+        "Subject.$": "States.Format('CRITICAL WEATHER ESCALATION: Station {} (Z: {})', $.station_id, $.z_score)",
+        "Message.$": "States.Format('NOAA CRITICAL EVENT ADVISORY\n============================\nStation: {}\nDate: {}\nZ-Score: {}\n\nAI Risk Analysis:\n{}', $.station_id, $.record_date, $.z_score, $.inference.advisory_text)"
+      },
+      "ResultPath": "$.sns_result",
+      "Next": "Format Fresh Response"
+    },
+    "Format Fresh Response": {
+      "Type": "Pass",
+      "Parameters": {
+        "source": "BEDROCK_INFERENCE",
+        "station_id.$": "$.station_id",
+        "record_date.$": "$.record_date",
+        "z_score.$": "$.z_score",
+        "advisory.$": "$.inference.advisory_text"
+      },
+      "End": true
+    }
+  }
+}
