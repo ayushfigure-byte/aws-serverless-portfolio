@@ -1,0 +1,41 @@
+# Lab 15: Serverless Weather Forecasting with PyTorch LSTM & Amazon SageMaker
+
+An end-to-end MLOps pipeline for sequential weather forecasting using a custom PyTorch Long Short-Term Memory (LSTM) network, trained on ephemeral Amazon SageMaker compute and deployed to an autoscaling real-time REST endpoint.
+
+---
+
+## Architecture Overview
+
+![Architecture Diagram](sagemaker-diagram.png)
+
+The project separates cloud infrastructure provisioning from deep learning model execution across two decoupled tiers:
+
+1. **Cloud Infrastructure & MLOps Lifecycle:**
+   * **Data Ingestion & S3 Staging:** Preprocessed sequential datasets staged into dedicated S3 channels (`train/` and `val/`).
+   * **Managed Ephemeral Training:** SageMaker provisions an isolated `ml.m5.large` instance running the AWS PyTorch 2.1 Deep Learning Container (DLC), trains the model, extracts artifacts to S3, and terminates immediately to stop compute costs.
+   * **Model Registry & Packaging:** Trained weights (`model.pth`) are bundled alongside the custom TorchServe inference handler (`code/inference.py` and `code/model.py`) into `model.tar.gz`.
+   * **Real-Time Deployment:** 3-tier hosting stack (`SageMaker Model` -> `Endpoint Configuration` -> `Real-Time Endpoint`) fronted by an Application Load Balancer for low-latency HTTPS predictions.
+
+2. **PyTorch Architecture & Serving Flow:**
+   * **Sliding Window Framing:** 5,000 days of meteorological observations reshaped into 7-day sliding lookback windows across 5 normalized atmospheric variables.
+   * **2-Layer LSTM Network:** Processes temporal dynamics and extracts the final time-step hidden state `[:, -1, :]` into a non-linear regression head (`Linear` -> `LayerNorm` -> `ReLU` -> `Dropout` -> `Linear`).
+   * **TorchServe Handler Contract:** Exposes a standard 4-hook interface (`model_fn`, `input_fn`, `predict_fn`, `output_fn`) that translates live JSON payloads to tensors and back.
+
+---
+
+## Repository Structure
+
+```text
+Lab-15-SageMaker-PyTorch/
+├── code/
+│   ├── model.py              # PyTorch TemperatureForecastNet architecture definition
+│   ├── train.py              # SageMaker-compatible training script with channel paths
+│   └── inference.py          # 4-hook TorchServe handler (model_fn, input_fn, predict_fn, output_fn)
+├── data/                     # Local train/val .npy tensor arrays
+├── upload_to_s3.py           # Local data generator, window slicer, and S3 staging script
+├── launch_training.py        # SageMaker Estimator API execution script
+├── deploy_endpoint.py        # Artifact repackager and 3-tier endpoint deployer
+├── test_endpoint.py          # Real-time HTTPS endpoint invocation script
+├── cleanup.py                # Teardown script for endpoint, config, and model resources
+├── sagemaker-diagram.png     # draw.io architecture graphic
+└── README.md
