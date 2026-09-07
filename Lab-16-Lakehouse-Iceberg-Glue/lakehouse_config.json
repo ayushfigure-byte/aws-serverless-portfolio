@@ -1,0 +1,7 @@
+{
+  "bucket_name": "weather-lakehouse-iceberg-605134445337-us-east-1",
+  "region": "us-east-1",
+  "glue_db_name": "weather_lakehouse_db",
+  "workgroup_name": "iceberg-lakehouse-wg",
+  "glue_role_arn": "arn:aws:iam::605134445337:role/AWSGlueIcebergLakehouseRole"
+}
