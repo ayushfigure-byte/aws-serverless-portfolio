@@ -1,0 +1,7 @@
+{
+  "account_id": "605134445337",
+  "region": "us-east-1",
+  "offline_store_bucket": "sagemaker-featurestore-605134445337-us-east-1",
+  "role_arn": "arn:aws:iam::605134445337:role/NOAASageMakerExecutionRole",
+  "feature_group_name": "customer-churn-features"
+}
