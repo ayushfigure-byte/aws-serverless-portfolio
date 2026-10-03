@@ -1,0 +1,12 @@
+{
+  "training_job_name": "weather-xgb-1791027699",
+  "model_data_s3": "s3://sagemaker-us-east-1-605134445337/lab-19-xgboost/output/weather-xgb-1791027699/output/model.tar.gz",
+  "image_uri": "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-xgboost:1.7-1",
+  "role_arn": "arn:aws:iam::605134445337:role/SageMakerExecutionRole",
+  "region": "us-east-1",
+  "bucket": "sagemaker-us-east-1-605134445337",
+  "metrics": {
+    "train:rmse": 0.6612100005149841,
+    "validation:rmse": 0.8355600237846375
+  }
+}
